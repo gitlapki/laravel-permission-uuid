@@ -11,8 +11,8 @@ class PermissionDoesNotExist extends InvalidArgumentException
         return new static("There is no permission named `{$permissionName}` for guard `{$guardName}`.");
     }
 
-    public static function withId(int $permissionId, string $guardName = '')
+    public static function withUuid(int $permissionUuid, string $guardName = '')
     {
-        return new static("There is no [permission] with id `{$permissionId}` for guard `{$guardName}`.");
+        return new static("There is no [permission] with uuid `{$permissionUuid}` for guard `{$guardName}`.");
     }
 }

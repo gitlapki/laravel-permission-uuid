@@ -6,13 +6,8 @@ use InvalidArgumentException;
 
 class RoleDoesNotExist extends InvalidArgumentException
 {
-    public static function named(string $roleName)
+    public static function namedOrUuid(string $roleName, string $guardName = '')
     {
-        return new static("There is no role named `{$roleName}`.");
-    }
-
-    public static function withId(int $roleId)
-    {
-        return new static("There is no role with id `{$roleId}`.");
+        return new static("There is no role named or uuid `{$roleName}` for guard `{$guardName}`.");
     }
 }

@@ -3,6 +3,7 @@
 namespace Spatie\Permission\Models;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Contracts\Permission as PermissionContract;
@@ -14,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Spatie\Permission\Traits\RefreshesPermissionCache;
 
 /**
- * @property int $id
+ * @property string $uuid
  * @property string $name
  * @property string $guard_name
  * @property ?\Illuminate\Support\Carbon $created_at
@@ -22,8 +23,11 @@ use Spatie\Permission\Traits\RefreshesPermissionCache;
  */
 class Permission extends Model implements PermissionContract
 {
+    use HasUuids;
     use HasRoles;
     use RefreshesPermissionCache;
+
+    protected $primaryKey = 'uuid';
 
     protected $guarded = [];
 
@@ -88,7 +92,7 @@ class Permission extends Model implements PermissionContract
      *
      * @throws \Spatie\Permission\Exceptions\PermissionDoesNotExist
      */
-    public static function findByName(string $name, $guardName = null): PermissionContract
+    public static function findByUuidOrName(string $name, $guardName = null): PermissionContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(static::class);
         $permission = static::getPermission(['name' => $name, 'guard_name' => $guardName]);
@@ -99,24 +103,6 @@ class Permission extends Model implements PermissionContract
         return $permission;
     }
 
-    /**
-     * Find a permission by its id (and optionally guardName).
-     *
-     * @param  string|null  $guardName
-     *
-     * @throws \Spatie\Permission\Exceptions\PermissionDoesNotExist
-     */
-    public static function findById(int $id, $guardName = null): PermissionContract
-    {
-        $guardName = $guardName ?? Guard::getDefaultName(static::class);
-        $permission = static::getPermission([(new static())->getKeyName() => $id, 'guard_name' => $guardName]);
-
-        if (! $permission) {
-            throw PermissionDoesNotExist::withId($id, $guardName);
-        }
-
-        return $permission;
-    }
 
     /**
      * Find or create permission by its name (and optionally guardName).

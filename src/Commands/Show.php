@@ -36,11 +36,8 @@ class Show extends Command
 
             $roles = $roleClass::whereGuardName($guard)
                 ->with('permissions')
-                ->when(config('permission.teams'), function ($q) use ($team_key) {
-                    $q->orderBy($team_key);
-                })
-                ->orderBy('name')->get()->mapWithKeys(function ($role) use ($team_key) {
-                    return [$role->name.'_'.($role->$team_key ?: '') => ['permissions' => $role->permissions->pluck('id'), $team_key => $role->$team_key]];
+                ->orderBy('name')->get()->mapWithKeys(function ($role) {
+                    return [$role->name => ['permissions' => $role->permissions->pluck('id')]];
                 });
 
             $permissions = $permissionClass::whereGuardName($guard)->orderBy('name')->pluck('name', 'id');
@@ -51,15 +48,9 @@ class Show extends Command
                 })->prepend($permission);
             });
 
-            if (config('permission.teams')) {
-                $teams = $roles->groupBy($team_key)->values()->map(function ($group, $id) {
-                    return new TableCell('Team ID: '.($id ?: 'NULL'), ['colspan' => $group->count()]);
-                });
-            }
 
             $this->table(
                 array_merge([
-                    config('permission.teams') ? $teams->prepend('')->toArray() : [],
                     $roles->keys()->map(function ($val) {
                         $name = explode('_', $val);
                         array_pop($name);

@@ -7,7 +7,6 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\View\Compilers\BladeCompiler;
 use Spatie\Permission\Contracts\Permission as PermissionContract;
 use Spatie\Permission\Contracts\Role as RoleContract;
 
@@ -39,10 +38,6 @@ class PermissionServiceProvider extends ServiceProvider
             __DIR__.'/../config/permission.php',
             'permission'
         );
-
-        $this->callAfterResolving('blade.compiler', function (BladeCompiler $bladeCompiler) {
-            $this->registerBladeExtensions($bladeCompiler);
-        });
     }
 
     protected function offerPublishing()
@@ -68,7 +63,6 @@ class PermissionServiceProvider extends ServiceProvider
             Commands\CreateRole::class,
             Commands\CreatePermission::class,
             Commands\Show::class,
-            Commands\UpgradeForTeams::class,
         ]);
     }
 
@@ -82,59 +76,6 @@ class PermissionServiceProvider extends ServiceProvider
 
         $this->app->bind(PermissionContract::class, $config['permission']);
         $this->app->bind(RoleContract::class, $config['role']);
-    }
-
-    public static function bladeMethodWrapper($method, $role, $guard = null)
-    {
-        return auth($guard)->check() && auth($guard)->user()->{$method}($role);
-    }
-
-    protected function registerBladeExtensions($bladeCompiler)
-    {
-        $bladeCompiler->directive('role', function ($arguments) {
-            return "<?php if(\\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasRole', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('elserole', function ($arguments) {
-            return "<?php elseif(\\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasRole', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('endrole', function () {
-            return '<?php endif; ?>';
-        });
-
-        $bladeCompiler->directive('hasrole', function ($arguments) {
-            return "<?php if(\\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasRole', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('endhasrole', function () {
-            return '<?php endif; ?>';
-        });
-
-        $bladeCompiler->directive('hasanyrole', function ($arguments) {
-            return "<?php if(\\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasAnyRole', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('endhasanyrole', function () {
-            return '<?php endif; ?>';
-        });
-
-        $bladeCompiler->directive('hasallroles', function ($arguments) {
-            return "<?php if(\\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasAllRoles', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('endhasallroles', function () {
-            return '<?php endif; ?>';
-        });
-
-        $bladeCompiler->directive('unlessrole', function ($arguments) {
-            return "<?php if(! \\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasRole', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('endunlessrole', function () {
-            return '<?php endif; ?>';
-        });
-
-        $bladeCompiler->directive('hasexactroles', function ($arguments) {
-            return "<?php if(\\Spatie\\Permission\\PermissionServiceProvider::bladeMethodWrapper('hasExactRoles', {$arguments})): ?>";
-        });
-        $bladeCompiler->directive('endhasexactroles', function () {
-            return '<?php endif; ?>';
-        });
     }
 
     protected function registerMacroHelpers()
