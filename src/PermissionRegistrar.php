@@ -28,17 +28,17 @@ class PermissionRegistrar
     {
         $this->cacheManager = $cacheManager;
         $this->cacheStore = $this->getCacheStoreFromConfig();
-        $this->cacheExpirationTime = config('permission.cache.expiration_time') ?: $this->cacheExpirationTime;
-        $this->cacheKey = config('permission.cache.key');
-        $this->permissionClass = config('permission.models.permission');
-        $this->roleClass = config('permission.models.role');
+        $this->cacheExpirationTime = config('rbac.cache.expiration_time') ?: $this->cacheExpirationTime;
+        $this->cacheKey = config('rbac.cache.key');
+        $this->permissionClass = config('rbac.models.permission');
+        $this->roleClass = config('rbac.models.role');
     }
 
     protected function getCacheStoreFromConfig(): Repository
     {
-        // the 'default' fallback here is from the permission.php config file,
+        // the 'default' fallback here is from the rbac.php config file,
         // where 'default' means to use config(cache.default)
-        $cacheDriver = config('permission.cache.store', 'default');
+        $cacheDriver = config('rbac.cache.store', 'default');
 
         // when 'default' is specified, no action is required since we already have the default instance
         if ($cacheDriver === 'default') {
@@ -175,7 +175,7 @@ class PermissionRegistrar
     public function setRoleClass($roleClass)
     {
         $this->roleClass = $roleClass;
-        config()->set('permission.models.role', $roleClass);
+        config()->set('rbac.models.role', $roleClass);
         app()->bind(Role::class, $roleClass);
 
         return $this;
@@ -229,7 +229,7 @@ class PermissionRegistrar
      */
     private function getSerializedPermissionsForCache()
     {
-        $this->except = config(key: 'permission.cache.column_names_except', default: ['created_at', 'updated_at', 'deleted_at']);
+        $this->except = config(key: 'rbac.cache.column_names_except', default: ['created_at', 'updated_at', 'deleted_at']);
 
         $permissions = $this->getPermissionsWithRoles()
             ->map(function ($permission) {

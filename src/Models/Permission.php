@@ -43,7 +43,7 @@ class Permission extends Model implements PermissionContract
 
     public function getTable()
     {
-        return config(key: 'permission.table_names.permissions', default: parent::getTable());
+        return config(key: 'rbac.table_names.permissions', default: parent::getTable());
     }
 
     public static function create(array $attributes = [])
@@ -65,10 +65,10 @@ class Permission extends Model implements PermissionContract
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
-            related: config('permission.models.role'),
-            table: config('permission.table_names.role_has_permissions'),
-            foreignPivotKey: config('permission.column_names.permission_pivot_key'),
-            relatedPivotKey: config('permission.column_names.role_pivot_key')
+            related: config('rbac.models.role'),
+            table: config('rbac.table_names.role_has_permissions'),
+            foreignPivotKey: config('rbac.column_names.permission_pivot_key'),
+            relatedPivotKey: config('rbac.column_names.role_pivot_key')
         );
     }
 
@@ -80,9 +80,9 @@ class Permission extends Model implements PermissionContract
         return $this->morphedByMany(
             related: getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
             name: 'model',
-            table: config('permission.table_names.model_has_permissions'),
-            foreignPivotKey: config('permission.column_names.permission_pivot_key'),
-            relatedPivotKey: config('permission.column_names.model_morph_key')
+            table: config('rbac.table_names.model_has_permissions'),
+            foreignPivotKey: config('rbac.column_names.permission_pivot_key'),
+            relatedPivotKey: config('rbac.column_names.model_morph_key')
         );
     }
 

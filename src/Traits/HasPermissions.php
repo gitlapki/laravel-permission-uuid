@@ -56,8 +56,8 @@ trait HasPermissions
 
         $this->wildcardClass = false;
 
-        if (config('permission.enable_wildcard_permission', false)) {
-            $this->wildcardClass = config('permission.wildcard_permission', WildcardPermission::class);
+        if (config('rbac.enable_wildcard_permission', false)) {
+            $this->wildcardClass = config('rbac.wildcard_permission', WildcardPermission::class);
 
             if (!is_subclass_of($this->wildcardClass, Wildcard::class)) {
                 throw WildcardPermissionNotImplementsContract::create();
@@ -73,11 +73,11 @@ trait HasPermissions
     public function permissions(): BelongsToMany
     {
         return $this->morphToMany(
-            related: config('permission.models.permission'),
+            related: config('rbac.models.permission'),
             name: 'model',
-            table: config('permission.table_names.model_has_permissions'),
-            foreignPivotKey: config('permission.column_names.model_morph_key'),
-            relatedPivotKey: config('permission.column_names.permission_pivot_key')
+            table: config('rbac.table_names.model_has_permissions'),
+            foreignPivotKey: config('rbac.column_names.model_morph_key'),
+            relatedPivotKey: config('rbac.column_names.permission_pivot_key')
         );
     }
 
@@ -101,7 +101,7 @@ trait HasPermissions
                 $permissionClass = $this->getPermissionClass();
                 $key = (new $permissionClass())->getKeyName();
                 $subQuery->whereIn(
-                    config('permission.table_names.permissions') . ".$key",
+                    config('rbac.table_names.permissions') . ".$key",
                     \array_column($permissions, $key)
                 );
             });
@@ -110,7 +110,7 @@ trait HasPermissions
                     $roleClass = $this->getRoleClass();
                     $key = (new $roleClass())->getKeyName();
                     $subQuery->whereIn(
-                        config('permission.table_names.roles') . ".$key",
+                        config('rbac.table_names.roles') . ".$key",
                         \array_column($rolesWithPermissions, $key)
                     );
                 });

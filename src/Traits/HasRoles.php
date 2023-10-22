@@ -42,11 +42,11 @@ trait HasRoles
     public function roles(): BelongsToMany
     {
         return $this->morphToMany(
-            related: config('permission.models.role'),
+            related: config('rbac.models.role'),
             name: 'model',
-            table: config('permission.table_names.model_has_roles'),
-            foreignPivotKey: config('permission.column_names.model_morph_key'),
-            relatedPivotKey: config('permission.column_names.role_pivot_key')
+            table: config('rbac.table_names.model_has_roles'),
+            foreignPivotKey: config('rbac.column_names.model_morph_key'),
+            relatedPivotKey: config('rbac.column_names.role_pivot_key')
         );
     }
 
@@ -75,7 +75,7 @@ trait HasRoles
         return $query->whereHas('roles', function (Builder $subQuery) use ($roles) {
             $roleClass = $this->getRoleClass();
             $key = (new $roleClass())->getKeyName();
-            $subQuery->whereIn(config('permission.table_names.roles') . ".$key", \array_column($roles, $key));
+            $subQuery->whereIn(config('rbac.table_names.roles') . ".$key", \array_column($roles, $key));
         });
     }
 

@@ -43,7 +43,7 @@ class Role extends Model implements RoleContract
 
     public function getTable()
     {
-        return config(key: 'permission.table_names.roles', default: parent::getTable());
+        return config(key: 'rbac.table_names.roles', default: parent::getTable());
     }
 
     public static function create(array $attributes = [])
@@ -62,10 +62,10 @@ class Role extends Model implements RoleContract
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(
-            related: config('permission.models.permission'),
-            table: config('permission.table_names.role_has_permissions'),
-            foreignPivotKey: config('permission.column_names.role_pivot_key'),
-            relatedPivotKey: config('permission.column_names.permission_pivot_key')
+            related: config('rbac.models.permission'),
+            table: config('rbac.table_names.role_has_permissions'),
+            foreignPivotKey: config('rbac.column_names.role_pivot_key'),
+            relatedPivotKey: config('rbac.column_names.permission_pivot_key')
         );
     }
 
@@ -74,9 +74,9 @@ class Role extends Model implements RoleContract
         return $this->morphedByMany(
             related: getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
             name: 'model',
-            table: config('permission.table_names.model_has_roles'),
-            foreignPivotKey: config('permission.column_names.role_pivot_key'),
-            relatedPivotKey: config('permission.column_names.model_morph_key')
+            table: config('rbac.table_names.model_has_roles'),
+            foreignPivotKey: config('rbac.column_names.role_pivot_key'),
+            relatedPivotKey: config('rbac.column_names.model_morph_key')
         );
     }
 
@@ -128,7 +128,7 @@ class Role extends Model implements RoleContract
 
     public function hasPermissionTo($permission): bool
     {
-        if (config('permission.enable_wildcard_permission', false)) {
+        if (config('rbac.enable_wildcard_permission', false)) {
             return $this->hasWildcardPermission(permission: $permission, guardName: $this->getDefaultGuardName());
         }
 
