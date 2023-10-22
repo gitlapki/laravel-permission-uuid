@@ -19,7 +19,7 @@ class PermissionRegistrar
     protected int $cacheExpirationTime = 60 * 60 * 24;
     protected string $permissionClass;
     protected string $roleClass;
-    protected Collection|null $permissions;
+    protected Collection|array|null $permissions;
     private array $cachedRoles = [];
     private array $alias = [];
     private array $except = [];
@@ -152,7 +152,7 @@ class PermissionRegistrar
     /**
      * Get an instance of the permission class.
      */
-    public function getPermissionClass(): Permission
+    public function getPermissionClass(): string
     {
         return $this->permissionClass;
     }
@@ -193,7 +193,7 @@ class PermissionRegistrar
 
     protected function getPermissionsWithRoles(): Collection
     {
-        return $this->getPermissionClass()->select()->with('roles')->get();
+        return $this->getPermissionClass()::select()->with('roles')->get();
     }
 
     /**
