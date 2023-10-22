@@ -73,11 +73,11 @@ trait HasPermissions
     public function permissions(): BelongsToMany
     {
         return $this->morphToMany(
-            config('permission.models.permission'),
-            'model',
-            config('permission.table_names.model_has_permissions'),
-            config('permission.column_names.model_morph_key'),
-            PermissionRegistrar::$pivotPermission
+            related: config('permission.models.permission'),
+            name: 'model',
+            table: config('permission.table_names.model_has_permissions'),
+            foreignPivotKey: config('permission.column_names.model_morph_key'),
+            relatedPivotKey: config('permission.column_names.permission_pivot_key')
         );
     }
 

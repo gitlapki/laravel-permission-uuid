@@ -42,11 +42,11 @@ trait HasRoles
     public function roles(): BelongsToMany
     {
         return $this->morphToMany(
-            config('permission.models.role'),
-            'model',
-            config('permission.table_names.model_has_roles'),
-            config('permission.column_names.model_morph_key'),
-            PermissionRegistrar::$pivotRole
+            related: config('permission.models.role'),
+            name: 'model',
+            table: config('permission.table_names.model_has_roles'),
+            foreignPivotKey: config('permission.column_names.model_morph_key'),
+            relatedPivotKey: config('permission.column_names.role_pivot_key')
         );
     }
 

@@ -10,7 +10,7 @@ use Symfony\Component\Console\Helper\TableCell;
 
 class Show extends Command
 {
-    protected $signature = 'permission:show
+    protected $signature = 'rbac:show
             {guard? : The name of the guard}
             {style? : The display style (default|borderless|compact|box)}';
 
@@ -20,7 +20,6 @@ class Show extends Command
     {
         $permissionClass = app(PermissionContract::class);
         $roleClass = app(RoleContract::class);
-        $team_key = config('permission.column_names.team_foreign_key');
 
         $style = $this->argument('style') ?? 'default';
         $guard = $this->argument('guard');
@@ -48,7 +47,6 @@ class Show extends Command
                 })->prepend($permission);
             });
 
-
             $this->table(
                 array_merge([
                     $roles->keys()->map(function ($val) {
@@ -56,8 +54,7 @@ class Show extends Command
                         array_pop($name);
 
                         return implode('_', $name);
-                    })
-                    ->prepend('')->toArray(),
+                    })->prepend('')->toArray(),
                 ]),
                 $body->toArray(),
                 $style

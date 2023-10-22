@@ -32,7 +32,7 @@ class WildcardPermission implements Wildcard
     }
 
     /**
-     * @param  string|WildcardPermission  $permission
+     * @param string|WildcardPermission $permission
      */
     public function implies($permission): bool
     {
@@ -49,8 +49,8 @@ class WildcardPermission implements Wildcard
                 return true;
             }
 
-            if (! $this->parts->get($i)->contains(static::WILDCARD_TOKEN)
-                && ! $this->containsAll($this->parts->get($i), $otherPart)) {
+            if (!$this->parts->get($i)->contains(static::WILDCARD_TOKEN)
+                && !$this->containsAll($this->parts->get($i), $otherPart)) {
                 return false;
             }
 
@@ -58,7 +58,7 @@ class WildcardPermission implements Wildcard
         }
 
         for ($i; $i < $partsCount; $i++) {
-            if (! $this->parts->get($i)->contains(static::WILDCARD_TOKEN)) {
+            if (!$this->parts->get($i)->contains(static::WILDCARD_TOKEN)) {
                 return false;
             }
         }
@@ -69,7 +69,7 @@ class WildcardPermission implements Wildcard
     protected function containsAll(Collection $part, Collection $otherPart): bool
     {
         foreach ($otherPart->toArray() as $item) {
-            if (! $part->contains($item)) {
+            if (!$part->contains($item)) {
                 return false;
             }
         }

@@ -19,7 +19,9 @@ class RoleOrPermissionMiddleware
             ? $roleOrPermission
             : explode('|', $roleOrPermission);
 
-        if (! $authGuard->user()->hasAnyRole($rolesOrPermissions) && ! $authGuard->user()->hasAnyPermission($rolesOrPermissions)) {
+        if (!$authGuard->user()->hasAnyRole($rolesOrPermissions)
+            && !$authGuard->user()->hasAnyPermission($rolesOrPermissions)
+        ) {
             throw UnauthorizedException::forRolesOrPermissions($rolesOrPermissions);
         }
 

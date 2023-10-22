@@ -22,7 +22,7 @@ class PermissionServiceProvider extends ServiceProvider
 
         $this->registerModelBindings();
 
-        if ($this->app->config['permission.register_permission_check_method']) {
+        if (config('rbac.register_permission_check_method')) {
             $permissionLoader->clearClassPermissions();
             $permissionLoader->registerPermissions();
         }
@@ -35,25 +35,27 @@ class PermissionServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__.'/../config/permission.php',
-            'permission'
+            __DIR__ . '/../config/rbac.php',
+            'rbac'
         );
     }
 
     protected function offerPublishing()
     {
-        if (! function_exists('config_path')) {
-            // function not available and 'publish' not relevant in Lumen
-            return;
-        }
+        $this->publishes(
+            paths: [
+                __DIR__ . '/../config/rbac.php' => config_path('rbac.php'),
+            ],
+            groups: 'rbac-config'
+        );
 
-        $this->publishes([
-            __DIR__.'/../config/permission.php' => config_path('permission.php'),
-        ], 'permission-config');
-
-        $this->publishes([
-            __DIR__.'/../database/migrations/create_permission_tables.php.stub' => $this->getMigrationFileName('create_permission_tables.php'),
-        ], 'permission-migrations');
+        $this->publishes(
+            paths: [
+                __DIR__ . '/../database/migrations/rbac_create_tables.php'
+                => $this->getMigrationFileName('rbac_create_tables.php'),
+            ],
+            groups: 'rbac-migrations'
+        );
     }
 
     protected function registerCommands()
@@ -68,34 +70,24 @@ class PermissionServiceProvider extends ServiceProvider
 
     protected function registerModelBindings()
     {
-        $config = $this->app->config['permission.models'];
-
-        if (! $config) {
-            return;
-        }
-
-        $this->app->bind(PermissionContract::class, $config['permission']);
-        $this->app->bind(RoleContract::class, $config['role']);
+        $this->app->bind(PermissionContract::class, config('rbac.models.permission'));
+        $this->app->bind(RoleContract::class, config('rbac.models.role'));
     }
 
     protected function registerMacroHelpers()
     {
-        if (! method_exists(Route::class, 'macro')) { // Lumen
-            return;
-        }
-
-        Route::macro('role', function ($roles = []) {
+        Route::macro('rbacRole', function ($roles = []) {
             $roles = implode('|', Arr::wrap($roles));
 
-            $this->middleware("role:$roles");
+            $this->middleware("rbac_role:$roles");
 
             return $this;
         });
 
-        Route::macro('permission', function ($permissions = []) {
+        Route::macro('rbacPermission', function ($permissions = []) {
             $permissions = implode('|', Arr::wrap($permissions));
 
-            $this->middleware("permission:$permissions");
+            $this->middleware("rbac_permission:$permissions");
 
             return $this;
         });
@@ -110,11 +102,11 @@ class PermissionServiceProvider extends ServiceProvider
 
         $filesystem = $this->app->make(Filesystem::class);
 
-        return Collection::make($this->app->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR)
+        return Collection::make($this->app->databasePath() . DIRECTORY_SEPARATOR . 'migrations' . DIRECTORY_SEPARATOR)
             ->flatMap(function ($path) use ($filesystem, $migrationFileName) {
-                return $filesystem->glob($path.'*_'.$migrationFileName);
+                return $filesystem->glob($path . '*_' . $migrationFileName);
             })
-            ->push($this->app->databasePath()."/migrations/{$timestamp}_{$migrationFileName}")
+            ->push($this->app->databasePath() . "/migrations/{$timestamp}_{$migrationFileName}")
             ->first();
     }
 }

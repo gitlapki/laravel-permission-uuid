@@ -20,7 +20,7 @@ class RoleMiddleware
             ? $role
             : explode('|', $role);
 
-        if (! $authGuard->user()->hasAnyRole($roles)) {
+        if (!$authGuard->user()->hasAnyRole($roles)) {
             throw UnauthorizedException::forRoles($roles);
         }
 

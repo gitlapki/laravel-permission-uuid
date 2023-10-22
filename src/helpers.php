@@ -1,6 +1,6 @@
 <?php
 
-if (! function_exists('getModelForGuard')) {
+if (!function_exists('getModelForGuard')) {
     /**
      * @return string|null
      */
@@ -8,7 +8,7 @@ if (! function_exists('getModelForGuard')) {
     {
         return collect(config('auth.guards'))
             ->map(function ($guard) {
-                if (! isset($guard['provider'])) {
+                if (!isset($guard['provider'])) {
                     return;
                 }
 

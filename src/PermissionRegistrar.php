@@ -13,64 +13,25 @@ use Spatie\Permission\Contracts\Role;
 
 class PermissionRegistrar
 {
-    /** @var \Illuminate\Contracts\Cache\Repository */
-    protected $cache;
+    protected Repository $cacheStore;
+    protected CacheManager $cacheManager;
+    protected string $cacheKey;
+    protected int $cacheExpirationTime = 60 * 60 * 24;
+    protected string $permissionClass;
+    protected string $roleClass;
+    protected Collection|null $permissions;
+    private array $cachedRoles = [];
+    private array $alias = [];
+    private array $except = [];
 
-    /** @var \Illuminate\Cache\CacheManager */
-    protected $cacheManager;
-
-    /** @var string */
-    protected $permissionClass;
-
-    /** @var string */
-    protected $roleClass;
-
-    /** @var \Illuminate\Database\Eloquent\Collection */
-    protected $permissions;
-
-    /** @var string */
-    public static $pivotRole;
-
-    /** @var string */
-    public static $pivotPermission;
-
-    /** @var \DateInterval|int */
-    public static $cacheExpirationTime;
-
-    /** @var string */
-    public static $cacheKey;
-
-    /** @var array */
-    private $cachedRoles = [];
-
-    /** @var array */
-    private $alias = [];
-
-    /** @var array */
-    private $except = [];
-
-    /**
-     * PermissionRegistrar constructor.
-     */
     public function __construct(CacheManager $cacheManager)
     {
+        $this->cacheManager = $cacheManager;
+        $this->cacheStore = $this->getCacheStoreFromConfig();
+        $this->cacheExpirationTime = config('permission.cache.expiration_time') ?: $this->cacheExpirationTime;
+        $this->cacheKey = config('permission.cache.key');
         $this->permissionClass = config('permission.models.permission');
         $this->roleClass = config('permission.models.role');
-
-        $this->cacheManager = $cacheManager;
-        $this->initializeCache();
-    }
-
-    public function initializeCache()
-    {
-        self::$cacheExpirationTime = config('permission.cache.expiration_time') ?: \DateInterval::createFromDateString('24 hours');
-
-        self::$cacheKey = config('permission.cache.key');
-
-        self::$pivotRole = config('permission.column_names.role_pivot_key') ?: 'role_uuid';
-        self::$pivotPermission = config('permission.column_names.permission_pivot_key') ?: 'permission_uuid';
-
-        $this->cache = $this->getCacheStoreFromConfig();
     }
 
     protected function getCacheStoreFromConfig(): Repository
@@ -85,7 +46,7 @@ class PermissionRegistrar
         }
 
         // if an undefined cache store is specified, fallback to 'array' which is Laravel's closest equiv to 'none'
-        if (! \array_key_exists($cacheDriver, config('cache.stores'))) {
+        if (!\array_key_exists($cacheDriver, config('cache.stores'))) {
             $cacheDriver = 'array';
         }
 
@@ -114,7 +75,7 @@ class PermissionRegistrar
     {
         $this->permissions = null;
 
-        return $this->cache->forget(self::$cacheKey);
+        return $this->cacheStore->forget($this->cacheKey);
     }
 
     /**
@@ -137,12 +98,16 @@ class PermissionRegistrar
             return;
         }
 
-        $this->permissions = $this->cache->remember(self::$cacheKey, self::$cacheExpirationTime, function () {
-            return $this->getSerializedPermissionsForCache();
-        });
+        $this->permissions = $this->cacheStore->remember(
+            key: $this->cacheKey,
+            ttl: $this->cacheExpirationTime,
+            callback: function () {
+                return $this->getSerializedPermissionsForCache();
+            }
+        );
 
-        // fallback for old cache method, must be removed on next mayor version
-        if (! isset($this->permissions['alias'])) {
+        // fallback for old cache method, must be removed on next major version
+        if (!isset($this->permissions['alias'])) {
             $this->forgetCachedPermissions();
             $this->loadPermissions();
 
@@ -189,14 +154,12 @@ class PermissionRegistrar
      */
     public function getPermissionClass(): Permission
     {
-        return app($this->permissionClass);
+        return $this->permissionClass;
     }
 
     public function setPermissionClass($permissionClass)
     {
         $this->permissionClass = $permissionClass;
-        config()->set('permission.models.permission', $permissionClass);
-        app()->bind(Permission::class, $permissionClass);
 
         return $this;
     }
@@ -220,12 +183,12 @@ class PermissionRegistrar
 
     public function getCacheRepository(): Repository
     {
-        return $this->cache;
+        return $this->cacheStore;
     }
 
     public function getCacheStore(): Store
     {
-        return $this->cache->getStore();
+        return $this->cacheStore->getStore();
     }
 
     protected function getPermissionsWithRoles(): Collection
@@ -250,10 +213,10 @@ class PermissionRegistrar
     private function aliasModelFields($newKeys = []): void
     {
         $i = 0;
-        $alphas = ! count($this->alias) ? range('a', 'h') : range('j', 'p');
+        $alphas = !count($this->alias) ? range('a', 'h') : range('j', 'p');
 
         foreach (array_keys($newKeys->getAttributes()) as $value) {
-            if (! isset($this->alias[$value])) {
+            if (!isset($this->alias[$value])) {
                 $this->alias[$value] = $alphas[$i++] ?? $value;
             }
         }
@@ -266,11 +229,11 @@ class PermissionRegistrar
      */
     private function getSerializedPermissionsForCache()
     {
-        $this->except = config('permission.cache.column_names_except', ['created_at', 'updated_at', 'deleted_at']);
+        $this->except = config(key: 'permission.cache.column_names_except', default: ['created_at', 'updated_at', 'deleted_at']);
 
         $permissions = $this->getPermissionsWithRoles()
             ->map(function ($permission) {
-                if (! $this->alias) {
+                if (!$this->alias) {
                     $this->aliasModelFields($permission);
                 }
 
@@ -284,18 +247,18 @@ class PermissionRegistrar
 
     private function getSerializedRoleRelation($permission)
     {
-        if (! $permission->roles->count()) {
+        if (!$permission->roles->count()) {
             return [];
         }
 
-        if (! isset($this->alias['roles'])) {
+        if (!isset($this->alias['roles'])) {
             $this->alias['roles'] = 'r';
             $this->aliasModelFields($permission->roles[0]);
         }
 
         return [
             'r' => $permission->roles->map(function ($role) {
-                if (! isset($this->cachedRoles[$role->getKey()])) {
+                if (!isset($this->cachedRoles[$role->getKey()])) {
                     $this->cachedRoles[$role->getKey()] = $this->aliasedArray($role);
                 }
 
@@ -320,9 +283,11 @@ class PermissionRegistrar
 
     private function getHydratedRoleCollection(array $roles)
     {
-        return Collection::make(array_values(
-            array_intersect_key($this->cachedRoles, array_flip($roles))
-        ));
+        return Collection::make(
+            array_values(
+                array_intersect_key($this->cachedRoles, array_flip($roles))
+            )
+        );
     }
 
     private function hydrateRolesCache()

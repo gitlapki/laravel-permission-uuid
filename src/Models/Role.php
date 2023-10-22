@@ -16,8 +16,9 @@ use Spatie\Permission\Traits\RefreshesPermissionCache;
 
 /**
  * @property string $uuid
- * @property string $name
+ * @property string $code
  * @property string $guard_name
+ * @property string|null $description
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
  */
@@ -42,17 +43,17 @@ class Role extends Model implements RoleContract
 
     public function getTable()
     {
-        return config('permission.table_names.roles', parent::getTable());
+        return config(key: 'permission.table_names.roles', default: parent::getTable());
     }
 
     public static function create(array $attributes = [])
     {
-        $attributes['guard_name'] = $attributes['guard_name'] ?? Guard::getDefaultName(static::class);
+        $attributes['guard_name'] = $attributes['guard_name'] ?? Guard::getDefaultName(class: static::class);
 
-        $params = ['name' => $attributes['name'], 'guard_name' => $attributes['guard_name']];
+        $params = ['code' => $attributes['code'], 'guard_name' => $attributes['guard_name']];
 
         if (static::findByParam($params)) {
-            throw RoleAlreadyExists::create($attributes['name'], $attributes['guard_name']);
+            throw RoleAlreadyExists::create(roleCode: $attributes['code'], guardName: $attributes['guard_name']);
         }
 
         return static::query()->create($attributes);
@@ -61,51 +62,50 @@ class Role extends Model implements RoleContract
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(
-            config('permission.models.permission'),
-            config('permission.table_names.role_has_permissions'),
-            PermissionRegistrar::$pivotRole,
-            PermissionRegistrar::$pivotPermission
+            related: config('permission.models.permission'),
+            table: config('permission.table_names.role_has_permissions'),
+            foreignPivotKey: config('permission.column_names.role_pivot_key'),
+            relatedPivotKey: config('permission.column_names.permission_pivot_key')
         );
     }
-
 
     public function users(): BelongsToMany
     {
         return $this->morphedByMany(
-            getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
-            'model',
-            config('permission.table_names.model_has_roles'),
-            PermissionRegistrar::$pivotRole,
-            config('permission.column_names.model_morph_key')
+            related: getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
+            name: 'model',
+            table: config('permission.table_names.model_has_roles'),
+            foreignPivotKey: config('permission.column_names.role_pivot_key'),
+            relatedPivotKey: config('permission.column_names.model_morph_key')
         );
     }
 
 
-    public static function findByUuidOrName(string $nameOrUuid, $guardName = null): RoleContract
+    public static function findByUuidOrCode(string $codeOrUuid, $guardName = null): RoleContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(static::class);
 
-        $role = static::where(function ($query) use ($nameOrUuid) {
-            $query->where('name', '=', $nameOrUuid)->orWhere('uuid', '=', $nameOrUuid);
+        $role = static::where(function ($query) use ($codeOrUuid) {
+            $query->where('code', '=', $codeOrUuid)->orWhere('uuid', '=', $codeOrUuid);
         })->where('guard_name', '=', $guardName)->first();
 
         if (!$role) {
-            throw RoleDoesNotExist::namedOrUuid($nameOrUuid, $guardName);
+            throw RoleDoesNotExist::codeOrUuid(roleCode: $codeOrUuid, guardName: $guardName);
         }
 
         return $role;
     }
 
-    public static function findOrCreate(string $name, $guardName = null): RoleContract
+    public static function findOrCreate(string $code, $guardName = null): RoleContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(static::class);
 
-        $role = static::findByParam(['name' => $name, 'guard_name' => $guardName]);
+        $role = static::findByParam(['code' => $code, 'guard_name' => $guardName]);
 
         if (!$role) {
             return static::create(
                 [
-                    'name' => $name,
+                    'code' => $code,
                     'guard_name' => $guardName
                 ]
             );
@@ -129,7 +129,7 @@ class Role extends Model implements RoleContract
     public function hasPermissionTo($permission): bool
     {
         if (config('permission.enable_wildcard_permission', false)) {
-            return $this->hasWildcardPermission($permission, $this->getDefaultGuardName());
+            return $this->hasWildcardPermission(permission: $permission, guardName: $this->getDefaultGuardName());
         }
 
         $permissionClass = $this->getPermissionClass();

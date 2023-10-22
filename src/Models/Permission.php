@@ -16,8 +16,9 @@ use Spatie\Permission\Traits\RefreshesPermissionCache;
 
 /**
  * @property string $uuid
- * @property string $name
+ * @property string $code
  * @property string $guard_name
+ * @property string|null $description
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
  */
@@ -42,17 +43,17 @@ class Permission extends Model implements PermissionContract
 
     public function getTable()
     {
-        return config('permission.table_names.permissions', parent::getTable());
+        return config(key: 'permission.table_names.permissions', default: parent::getTable());
     }
 
     public static function create(array $attributes = [])
     {
         $attributes['guard_name'] = $attributes['guard_name'] ?? Guard::getDefaultName(static::class);
 
-        $permission = static::getPermission(['name' => $attributes['name'], 'guard_name' => $attributes['guard_name']]);
+        $permission = static::getPermission(['code' => $attributes['code'], 'guard_name' => $attributes['guard_name']]);
 
         if ($permission) {
-            throw PermissionAlreadyExists::create($attributes['name'], $attributes['guard_name']);
+            throw PermissionAlreadyExists::create(permissionCode: $attributes['code'], guardName: $attributes['guard_name']);
         }
 
         return static::query()->create($attributes);
@@ -64,10 +65,10 @@ class Permission extends Model implements PermissionContract
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
-            config('permission.models.role'),
-            config('permission.table_names.role_has_permissions'),
-            PermissionRegistrar::$pivotPermission,
-            PermissionRegistrar::$pivotRole
+            related: config('permission.models.role'),
+            table: config('permission.table_names.role_has_permissions'),
+            foreignPivotKey: config('permission.column_names.permission_pivot_key'),
+            relatedPivotKey: config('permission.column_names.role_pivot_key')
         );
     }
 
@@ -77,27 +78,27 @@ class Permission extends Model implements PermissionContract
     public function users(): BelongsToMany
     {
         return $this->morphedByMany(
-            getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
-            'model',
-            config('permission.table_names.model_has_permissions'),
-            PermissionRegistrar::$pivotPermission,
-            config('permission.column_names.model_morph_key')
+            related: getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
+            name: 'model',
+            table: config('permission.table_names.model_has_permissions'),
+            foreignPivotKey: config('permission.column_names.permission_pivot_key'),
+            relatedPivotKey: config('permission.column_names.model_morph_key')
         );
     }
 
     /**
      * Find a permission by its name (and optionally guardName).
      *
-     * @param  string|null  $guardName
+     * @param string|null $guardName
      *
      * @throws \Spatie\Permission\Exceptions\PermissionDoesNotExist
      */
-    public static function findByUuidOrName(string $name, $guardName = null): PermissionContract
+    public static function findByUuidOrCode(string $code, $guardName = null): PermissionContract
     {
-        $guardName = $guardName ?? Guard::getDefaultName(static::class);
-        $permission = static::getPermission(['name' => $name, 'guard_name' => $guardName]);
-        if (! $permission) {
-            throw PermissionDoesNotExist::create($name, $guardName);
+        $guardName = $guardName ?? Guard::getDefaultName(class: static::class);
+        $permission = static::getPermission(['code' => $code, 'guard_name' => $guardName]);
+        if (!$permission) {
+            throw PermissionDoesNotExist::create(permissionCode: $code, guardName: $guardName);
         }
 
         return $permission;
@@ -107,15 +108,15 @@ class Permission extends Model implements PermissionContract
     /**
      * Find or create permission by its name (and optionally guardName).
      *
-     * @param  string|null  $guardName
+     * @param string|null $guardName
      */
-    public static function findOrCreate(string $name, $guardName = null): PermissionContract
+    public static function findOrCreate(string $code, $guardName = null): PermissionContract
     {
-        $guardName = $guardName ?? Guard::getDefaultName(static::class);
-        $permission = static::getPermission(['name' => $name, 'guard_name' => $guardName]);
+        $guardName = $guardName ?? Guard::getDefaultName(class: static::class);
+        $permission = static::getPermission(['code' => $code, 'guard_name' => $guardName]);
 
-        if (! $permission) {
-            return static::query()->create(['name' => $name, 'guard_name' => $guardName]);
+        if (!$permission) {
+            return static::query()->create(['code' => $code, 'guard_name' => $guardName]);
         }
 
         return $permission;
@@ -126,7 +127,7 @@ class Permission extends Model implements PermissionContract
      */
     protected static function getPermissions(array $params = [], bool $onlyOne = false): Collection
     {
-        return app(PermissionRegistrar::class)
+        return app(abstract: PermissionRegistrar::class)
             ->setPermissionClass(static::class)
             ->getPermissions($params, $onlyOne);
     }
@@ -138,6 +139,6 @@ class Permission extends Model implements PermissionContract
      */
     protected static function getPermission(array $params = []): ?PermissionContract
     {
-        return static::getPermissions($params, true)->first();
+        return static::getPermissions(params: $params, onlyOne: true)->first();
     }
 }

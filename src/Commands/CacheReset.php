@@ -7,7 +7,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class CacheReset extends Command
 {
-    protected $signature = 'permission:cache-reset';
+    protected $signature = 'rbac:permissions-cache-reset';
 
     protected $description = 'Reset the permission cache';
 

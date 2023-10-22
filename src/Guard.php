@@ -4,6 +4,7 @@ namespace Spatie\Permission;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use ReflectionClass;
 
 class Guard
 {
@@ -11,22 +12,22 @@ class Guard
      * Return a collection of guard names suitable for the $model,
      * as indicated by the presence of a $guard_name property or a guardName() method on the model.
      *
-     * @param  string|Model  $model model class object or name
+     * @param string|Model $model model class object or name
      */
     public static function getNames($model): Collection
     {
         $class = is_object($model) ? get_class($model) : $model;
 
         if (is_object($model)) {
-            if (\method_exists($model, 'guardName')) {
+            if (method_exists($model, 'guardName')) {
                 $guardName = $model->guardName();
             } else {
                 $guardName = $model->getAttributeValue('guard_name');
             }
         }
 
-        if (! isset($guardName)) {
-            $guardName = (new \ReflectionClass($class))->getDefaultProperties()['guard_name'] ?? null;
+        if (!isset($guardName)) {
+            $guardName = (new ReflectionClass($class))->getDefaultProperties()['guard_name'] ?? null;
         }
 
         if ($guardName) {
@@ -49,7 +50,7 @@ class Guard
     {
         return collect(config('auth.guards'))
             ->map(function ($guard) {
-                if (! isset($guard['provider'])) {
+                if (!isset($guard['provider'])) {
                     return null;
                 }
 
@@ -64,20 +65,20 @@ class Guard
     /**
      * Lookup a guard name relevant for the $class model and the current user.
      *
-     * @param  string|Model  $class model class object or name
+     * @param string|Model $class model class object or name
      * @return string guard name
      */
     public static function getDefaultName($class): string
     {
         $default = config('auth.defaults.guard');
 
-        $possible_guards = static::getNames($class);
+        $possibleGuards = static::getNames($class);
 
         // return current-detected auth.defaults.guard if it matches one of those that have been checked
-        if ($possible_guards->contains($default)) {
+        if ($possibleGuards->contains($default)) {
             return $default;
         }
 
-        return $possible_guards->first() ?: $default;
+        return $possibleGuards->first() ?: $default;
     }
 }
