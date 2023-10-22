@@ -8,7 +8,7 @@ use Spatie\Permission\Contracts\Permission as PermissionContract;
 class CreatePermission extends Command
 {
     protected $signature = 'rbac:permissions-create
-                {name : The name of the permission}
+                {code : The code of the permission}
                 {guard? : The name of the guard}';
 
     protected $description = 'Create a permission';
@@ -17,10 +17,10 @@ class CreatePermission extends Command
     {
         $permissionClass = app(PermissionContract::class);
 
-        $permission = $permissionClass::findOrCreate($this->argument('name'), $this->argument('guard'));
+        $permission = $permissionClass::findOrCreate($this->argument('code'), $this->argument('guard'));
 
         $this->info(
-            "Permission `{$permission->name}` " . ($permission->wasRecentlyCreated ? 'created' : 'already exists')
+            "Permission `{$permission->code}` " . ($permission->wasRecentlyCreated ? 'created' : 'already exists')
         );
     }
 }

@@ -18,7 +18,7 @@ interface Permission
      *
      * @throws \Spatie\Permission\Exceptions\PermissionDoesNotExist
      */
-    public static function findByUuidOrCode(string $code, $guardName): self;
+    public static function findByUuidOrCode(string $code, ?string $guardName): self;
 
 
     /**
@@ -26,5 +26,5 @@ interface Permission
      *
      * @param string|null $guardName
      */
-    public static function findOrCreate(string $code, $guardName): self;
+    public static function findOrCreate(string $code, ?string $guardName): self;
 }

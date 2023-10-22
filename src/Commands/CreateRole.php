@@ -9,7 +9,7 @@ use Spatie\Permission\Contracts\Role as RoleContract;
 class CreateRole extends Command
 {
     protected $signature = 'rbac:role-create
-        {name : The name of the role}
+        {code : The code of the role}
         {guard? : The name of the guard}
         {permissions? : A list of permissions to assign to the role, separated by | }';
 
@@ -19,11 +19,11 @@ class CreateRole extends Command
     {
         $roleClass = app(RoleContract::class);
 
-        $role = $roleClass::findOrCreate($this->argument('name'), $this->argument('guard'));
+        $role = $roleClass::findOrCreate($this->argument('code'), $this->argument('guard'));
 
         $role->givePermissionTo($this->makePermissions($this->argument('permissions')));
 
-        $this->info("Role `{$role->name}` " . ($role->wasRecentlyCreated ? 'created' : 'updated'));
+        $this->info("Role `{$role->code}` " . ($role->wasRecentlyCreated ? 'created' : 'updated'));
     }
 
     /**

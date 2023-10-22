@@ -81,7 +81,7 @@ class Role extends Model implements RoleContract
     }
 
 
-    public static function findByUuidOrCode(string $codeOrUuid, $guardName = null): RoleContract
+    public static function findByUuidOrCode(string $codeOrUuid, ?string $guardName = null): RoleContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(static::class);
 
@@ -96,7 +96,7 @@ class Role extends Model implements RoleContract
         return $role;
     }
 
-    public static function findOrCreate(string $code, $guardName = null): RoleContract
+    public static function findOrCreate(string $code, ?string $guardName = null): RoleContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(static::class);
 

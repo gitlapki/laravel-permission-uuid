@@ -59,9 +59,6 @@ class Permission extends Model implements PermissionContract
         return static::query()->create($attributes);
     }
 
-    /**
-     * A permission can be applied to roles.
-     */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -72,9 +69,6 @@ class Permission extends Model implements PermissionContract
         );
     }
 
-    /**
-     * A permission belongs to some users of the model associated with its guard.
-     */
     public function users(): BelongsToMany
     {
         return $this->morphedByMany(
@@ -86,14 +80,7 @@ class Permission extends Model implements PermissionContract
         );
     }
 
-    /**
-     * Find a permission by its name (and optionally guardName).
-     *
-     * @param string|null $guardName
-     *
-     * @throws \Spatie\Permission\Exceptions\PermissionDoesNotExist
-     */
-    public static function findByUuidOrCode(string $code, $guardName = null): PermissionContract
+    public static function findByUuidOrCode(string $code, ?string $guardName = null): PermissionContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(class: static::class);
         $permission = static::getPermission(['code' => $code, 'guard_name' => $guardName]);
@@ -104,13 +91,7 @@ class Permission extends Model implements PermissionContract
         return $permission;
     }
 
-
-    /**
-     * Find or create permission by its name (and optionally guardName).
-     *
-     * @param string|null $guardName
-     */
-    public static function findOrCreate(string $code, $guardName = null): PermissionContract
+    public static function findOrCreate(string $code, ?string $guardName = null): PermissionContract
     {
         $guardName = $guardName ?? Guard::getDefaultName(class: static::class);
         $permission = static::getPermission(['code' => $code, 'guard_name' => $guardName]);
@@ -122,9 +103,6 @@ class Permission extends Model implements PermissionContract
         return $permission;
     }
 
-    /**
-     * Get the current cached permissions.
-     */
     protected static function getPermissions(array $params = [], bool $onlyOne = false): Collection
     {
         return app(abstract: PermissionRegistrar::class)
@@ -132,11 +110,6 @@ class Permission extends Model implements PermissionContract
             ->getPermissions($params, $onlyOne);
     }
 
-    /**
-     * Get the current cached first permission.
-     *
-     * @return \Spatie\Permission\Contracts\Permission
-     */
     protected static function getPermission(array $params = []): ?PermissionContract
     {
         return static::getPermissions(params: $params, onlyOne: true)->first();

@@ -113,7 +113,7 @@ return [
         /*
          * The cache key used to store all permissions.
          */
-        'key' => 'spatie.permission.cache',
+        'key' => 'rbac.cache',
 
         /*
          * You may optionally indicate a specific cache driver to use for permission and
