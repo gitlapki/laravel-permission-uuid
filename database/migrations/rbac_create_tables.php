@@ -3,9 +3,8 @@
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
-use Spatie\Permission\PermissionRegistrar;
 
-class CreatePermissionTables extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -30,7 +29,7 @@ class CreatePermissionTables extends Migration
             $table->text('description')->nullable(true);
             $table->timestamps();
 
-            $table->unique(['name', 'guard_name']);
+            $table->unique(['code', 'guard_name']);
         });
 
         Schema::create($tableNames['roles'], function (Blueprint $table) use ($columnNames) {
@@ -40,7 +39,7 @@ class CreatePermissionTables extends Migration
             $table->text('description')->nullable(true);
             $table->timestamps();
 
-            $table->unique(['name', 'guard_name']);
+            $table->unique(['code', 'guard_name']);
         });
 
         Schema::create(
@@ -129,4 +128,4 @@ class CreatePermissionTables extends Migration
         Schema::drop($tableNames['roles']);
         Schema::drop($tableNames['permissions']);
     }
-}
+};
