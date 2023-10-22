@@ -6,33 +6,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 interface Role
 {
-    /**
-     * A role may be given various permissions.
-     */
     public function permissions(): BelongsToMany;
 
-    /**
-     * Find a role by its name and guard name.
-     *
-     * @param string|null $guardName
-     * @return \Spatie\Permission\Contracts\Role
-     *
-     * @throws \Spatie\Permission\Exceptions\RoleDoesNotExist
-     */
-    public static function findByUuidOrCode(string $codeOrUuid, $guardName): self;
+    public static function findByUuidOrCode(string $codeOrUuid, ?string $guardName): self;
 
-    /**
-     * Find or create a role by its name and guard name.
-     *
-     * @param string|null $guardName
-     * @return \Spatie\Permission\Contracts\Role
-     */
-    public static function findOrCreate(string $code, $guardName): self;
+    public static function findOrCreate(string $code, ?string  $guardName): self;
 
-    /**
-     * Determine if the user may perform the given permission.
-     *
-     * @param string|\Spatie\Permission\Contracts\Permission $permission
-     */
     public function hasPermissionTo($permission): bool;
 }
