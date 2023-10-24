@@ -20,7 +20,7 @@ class Show extends Command
     {
         $permissionClass = app(PermissionContract::class);
         $roleClass = app(RoleContract::class);
-
+        $permissionPrimaryKey = (new $permissionClass)->getKeyName();
         $style = $this->argument('style') ?? 'default';
         $guard = $this->argument('guard');
 
@@ -33,13 +33,15 @@ class Show extends Command
         foreach ($guards as $guard) {
             $this->info("Guard: $guard");
 
+
+
             $roles = $roleClass::whereGuardName($guard)
                 ->with('permissions')
-                ->orderBy('name')->get()->mapWithKeys(function ($role) {
-                    return [$role->name => ['permissions' => $role->permissions->pluck('id')]];
+                ->orderBy('code')->get()->mapWithKeys(function ($role) use ($permissionPrimaryKey) {
+                    return [$role->code => ['permissions' => $role->permissions->pluck($permissionPrimaryKey)]];
                 });
 
-            $permissions = $permissionClass::whereGuardName($guard)->orderBy('name')->pluck('name', 'id');
+            $permissions = $permissionClass::whereGuardName($guard)->orderBy('code')->pluck('code', $permissionPrimaryKey);
 
             $body = $permissions->map(function ($permission, $id) use ($roles) {
                 return $roles->map(function (array $role_data) use ($id) {

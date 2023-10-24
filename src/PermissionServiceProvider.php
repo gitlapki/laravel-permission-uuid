@@ -2,6 +2,9 @@
 
 namespace Spatie\Permission;
 
+use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Cache\Factory as FactoryContract;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Arr;
@@ -12,8 +15,14 @@ use Spatie\Permission\Contracts\Role as RoleContract;
 
 class PermissionServiceProvider extends ServiceProvider
 {
-    public function boot(PermissionRegistrar $permissionLoader)
+    public function boot()
     {
+        $cacheManager = $this->app->make(abstract: FactoryContract::class);
+
+        $this->app->singleton(PermissionRegistrar::class, function ($app) use ($cacheManager) {
+            return new PermissionRegistrar(cacheManager: $cacheManager);
+        });
+
         $this->offerPublishing();
 
         $this->registerMacroHelpers();
@@ -23,13 +32,14 @@ class PermissionServiceProvider extends ServiceProvider
         $this->registerModelBindings();
 
         if (config('rbac.register_permission_check_method')) {
-            $permissionLoader->clearClassPermissions();
-            $permissionLoader->registerPermissions();
+            app(Gate::class)->before(
+                function (Authorizable $user, string $ability) {
+                    if (method_exists($user, 'checkPermissionTo')) {
+                        return $user->checkPermissionTo($ability) ?: null;
+                    }
+                }
+            );
         }
-
-        $this->app->singleton(PermissionRegistrar::class, function ($app) use ($permissionLoader) {
-            return $permissionLoader;
-        });
     }
 
     public function register()
