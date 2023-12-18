@@ -19,7 +19,7 @@ class PermissionRegistrar
     protected int $cacheExpirationTime = 60 * 60 * 24;
     protected string $permissionClass;
     protected string $roleClass;
-    protected Collection|array|null $permissions;
+    protected Collection|array|null $permissions = null;
     private array $cachedRoles = [];
     private array $alias = [];
     private array $except = [];
