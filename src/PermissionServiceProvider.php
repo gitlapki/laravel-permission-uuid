@@ -13,15 +13,45 @@ use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Contracts\Permission as PermissionContract;
 use Spatie\Permission\Contracts\Role as RoleContract;
 
+use Spatie\Permission\Repositories\RoleRepositoryInterface;
+use Spatie\Permission\Repositories\RoleRepository;
+use Spatie\Permission\Repositories\PermissionRepositoryInterface;
+use Spatie\Permission\Repositories\PermissionRepository;
+use Spatie\Permission\Services\CacheRepositoryInterface;
+use Spatie\Permission\Services\CacheRepository;
+
 class PermissionServiceProvider extends ServiceProvider
 {
     public function boot()
     {
         $cacheManager = $this->app->make(abstract: FactoryContract::class);
 
-        $this->app->singleton(PermissionRegistrar::class, function ($app) use ($cacheManager) {
-            return new PermissionRegistrar(cacheManager: $cacheManager);
+        $this->app->singleton(RoleRepositoryInterface::class, function ($app) use ($cacheManager) {
+            return new RoleRepository();
         });
+        $roleRepository = $this->app->make(abstract: RoleRepositoryInterface::class);
+
+        $this->app->singleton(PermissionRepositoryInterface::class, function ($app) use ($cacheManager) {
+            return new PermissionRepository();
+        });
+        $permissionRepository = $this->app->make(abstract: PermissionRepositoryInterface::class);
+
+        $this->app->singleton(CacheRepositoryInterface::class, function ($app) use ($cacheManager) {
+            return new CacheRepository(cacheManager: $cacheManager);
+        });
+        $cacheService = $this->app->make(abstract: CacheRepositoryInterface::class);
+
+        $this->app->singleton(
+            PermissionService::class,
+            function ($app) use ($roleRepository, $permissionRepository, $cacheService) {
+                return new PermissionService(
+                    roleRepository: $roleRepository,
+                    permissionRepository: $permissionRepository,
+                    cacheService: $cacheService,
+                );
+            }
+        );
+
 
         $this->offerPublishing();
 
